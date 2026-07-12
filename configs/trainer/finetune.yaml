@@ -1,0 +1,23 @@
+max_epochs: 200
+accelerator: "auto"
+devices: "auto"
+precision: "32-true"
+log_every_n_steps: 5
+check_val_every_n_epoch: 1
+gradient_clip_val: 1.0
+accumulate_grad_batches: 1
+deterministic: false
+num_sanity_val_steps: 1
+
+callbacks:
+  checkpoint:
+    save_top_k: 1
+    monitor: "val/dice"
+    mode: "max"
+    save_last: true
+    filename: "epoch{epoch:03d}-dice{val/dice:.4f}"
+  early_stopping:
+    enable: true
+    monitor: "val/dice"
+    patience: 40
+    mode: "max"

@@ -1,0 +1,35 @@
+# MS-MAE (Multi-Scale MAE): fine (full-res masked patches) + coarse (16^3 global)
+# reconstruction sharing ONE encoder. Adds global-context pressure on the
+# bottleneck on top of standard MAE local reconstruction. (Paper contribution.)
+name: ms_mae
+_target_: src.strategies.ms_mae.strategy.MSMAEStrategy
+
+# Masking
+mask_ratio: 0.6
+patch_size: [8, 8, 8]
+mask_value: 0.0
+
+# Coarse global target resolution (downsampled clean volume the coarse head predicts)
+coarse_shape: [16, 16, 16]
+
+# Fine head: full-resolution masked reconstruction (intentionally weak decoder)
+fine_decoder:
+  _target_: src.models.heads.mae_decoder.WeakMAEDecoder
+  channels: 16
+  num_blocks: 2
+  use_skips: false
+  out_channels: 1
+
+# Coarse head: low-res global reconstruction (same weak-decoder class)
+coarse_decoder:
+  _target_: src.models.heads.mae_decoder.WeakMAEDecoder
+  channels: 16
+  num_blocks: 2
+  use_skips: false
+  out_channels: 1
+
+# Loss: weighted sum. Fine carries local detail, coarse carries global structure.
+loss:
+  type: "l1_masked"          # fine-stream loss: l1_masked | l2_masked
+  lambda_fine: 1.0
+  lambda_coarse: 0.5

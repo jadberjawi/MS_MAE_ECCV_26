@@ -1,0 +1,40 @@
+# Root config for MS-MAE self-supervised pretraining.
+defaults:
+  - data: ssl
+  - backbone: unet3d
+  - pretrain: ms_mae
+  - optim: adamw
+  - trainer: pretrain
+  - logger: wandb
+  - _self_
+
+seed: 1337
+task: pretrain
+run_name: ${pretrain.name}_${backbone.name}_seed${seed}
+
+logger:
+  project: "ms-mae-pretrain"
+
+# Single toggle for Weights & Biases. Set use_wandb=false (or logger.mode=disabled)
+# to run without any logging (e.g. a quick local smoke test).
+use_wandb: true
+
+# Exponential Moving Average of the encoder weights. The EMA copy is swapped in
+# during validation and saved alongside the regular state_dict in each checkpoint
+# (under `ema_encoder_state_dict`). The finetune loader prefers the EMA weights
+# when present. Typically +1-3% finetune Dice for free.
+ema:
+  enable: true
+  decay: 0.999
+  use_for_validation: true
+  save_in_ckpt: true
+
+paths:
+  project_root: ${hydra:runtime.cwd}
+  cache_dir: ${paths.project_root}/cache
+  output_dir: ${paths.project_root}/outputs/pretrain/${run_name}
+  ckpt_dir: ${paths.output_dir}/checkpoints
+
+hydra:
+  run:
+    dir: ${paths.output_dir}

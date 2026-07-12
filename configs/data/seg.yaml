@@ -1,0 +1,65 @@
+# Labeled SPECT volumes + LV masks for supervised segmentation.
+name: seg_labeled
+
+# Train+val pool. K-fold runs over the .npz files in cache_dir.
+raw_image_dir: ${paths.project_root}/data/labeled/DICOM
+raw_mask_dir:  ${paths.project_root}/data/labeled/masks
+cache_dir:     ${paths.cache_dir}/labeled
+
+# External, patient-disjoint test set. If `cache/labeled_test/` exists and
+# contains .npz files, those are used as the held-out test set and
+# `split.test_fraction` is IGNORED (no random holdout from the labeled pool).
+# To use:
+#   1. Manually pick ~17 of 83 patients for test (decide once, write down).
+#   2. Move their DICOMs to data/labeled_test/DICOM/ and masks to
+#      data/labeled_test/masks/.
+#   3. Run `python scripts/prepare_data.py --only labeled_test`
+#   4. Run finetune as usual. test_fraction is silently overridden.
+test_raw_image_dir: ${paths.project_root}/data/labeled_test/DICOM
+test_raw_mask_dir:  ${paths.project_root}/data/labeled_test/masks
+test_cache_dir:     ${paths.cache_dir}/labeled_test
+
+preprocess:
+  target_spacing: [4.0, 4.0, 4.0]
+  target_shape: [64, 64, 64]        # whole-volume training crop
+  clip_percentiles: [0.5, 99.5]
+  # Label-free LV-centred cropping — SAME localizer as pretraining (ssl.yaml).
+  # The mask is cropped with the SAME box and verified fully contained (a warning
+  # is printed if any LV voxel is clipped). pad_to keeps the heart at the same
+  # voxel scale as pretraining; only the canvas (target_shape) differs.
+  # Keep crop_size/lv_radius/use_ring IDENTICAL to ssl.yaml.
+  smart_crop: true
+  crop_size: [48, 48, 48]
+  lv_radius: 9.0
+  use_ring: true
+
+loader:
+  batch_size: 2
+  num_workers: 2
+  pin_memory: false
+  persistent_workers: false
+
+# SPECT-safe augmentations — see src/data/transforms.py for full rationale.
+#   * No axis flips by default (heart is chiral).
+#   * Rotation only around the LONG (Z) axis (short-axis-plane rotation).
+#   * Multiplicative intensity scale only (no additive shift — preserve true zero).
+#   * Poisson-like noise (sigma ∝ sqrt(intensity)), matches SPECT physics.
+#   * Elastic deformation OFF by default; enable cautiously (alpha=2-4).
+augment:
+  enable: true
+  rotation_deg: 8.0           # ± degrees around long axis
+  p_rotation: 0.7
+  translation_voxels: 3       # ± voxels per axis
+  p_translation: 0.7
+  intensity_scale: 0.10       # ± fractional scale (no shift)
+  p_intensity: 0.5
+  poisson_strength: 0.05      # sigma = strength * sqrt(intensity)
+  p_noise: 0.5
+  elastic_alpha: 0.0          # 0 = off; try 2-4 only after visual QA
+  elastic_sigma: 6.0
+  p_elastic: 0.3
+  flip_axes: []               # keep empty unless you've canonicalized chirality
+  p_flip: 0.5
+
+num_classes: 2       # background + LV foreground
+seed: ${seed}

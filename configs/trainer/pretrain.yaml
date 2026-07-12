@@ -1,0 +1,24 @@
+# Pretraining trainer config (passed to pl.Trainer + our wrapper).
+max_epochs: 200
+accelerator: "auto"          # cpu | gpu | mps | auto
+devices: "auto"
+precision: "32-true"         # bump to "16-mixed" on CUDA
+log_every_n_steps: 10
+check_val_every_n_epoch: 1
+gradient_clip_val: 1.0
+accumulate_grad_batches: 1
+deterministic: false         # SSL benefits from non-determinism; flip to true for reproducibility
+num_sanity_val_steps: 1
+
+callbacks:
+  checkpoint:
+    save_top_k: 1
+    monitor: "val/loss"
+    mode: "min"
+    save_last: true
+    filename: "epoch{epoch:03d}-loss{val/loss:.4f}"
+  early_stopping:
+    enable: false             # SSL: typically train a fixed budget
+    monitor: "val/loss"
+    patience: 30
+    mode: "min"

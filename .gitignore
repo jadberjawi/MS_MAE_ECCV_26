@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Project artifacts
+cache/
+outputs/
+wandb/
+lightning_logs/
+*.ckpt
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# Raw data (keep the folder structure via .gitkeep, ignore the DICOM/NIfTI files)
+data/**/*.dcm
+data/**/*.nii
+data/**/*.nii.gz

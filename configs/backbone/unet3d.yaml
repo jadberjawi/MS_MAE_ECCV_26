@@ -1,0 +1,12 @@
+# Shared 3D U-Net encoder. The SAME class is instantiated for SSL and for finetuning,
+# guaranteeing weight-compatible transfer.
+name: unet3d
+_target_: src.models.backbones.unet3d.UNet3DEncoder
+
+in_channels: 1
+base_channels: 32          # channels at the first stage
+channel_mult: [1, 2, 4, 8] # stage widths = base_channels * mult
+num_res_blocks: 1          # conv blocks per stage
+norm: "batch"           # instance | batch | group
+activation: "leaky_relu"
+dropout: 0.0

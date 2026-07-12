@@ -1,0 +1,34 @@
+# --- PyTorch: install SEPARATELY, matching your CUDA driver version ---
+#
+# This file deliberately does NOT pin torch. Pick the line matching your
+# machine and run it ONCE inside your virtualenv:
+#
+#   CUDA 12.8 driver (nvidia-smi shows CUDA Version: 12.8):
+#     pip install torch==2.7.* torchvision --index-url https://download.pytorch.org/whl/cu128
+#   CUDA 12.4 driver:
+#     pip install torch==2.5.* torchvision --index-url https://download.pytorch.org/whl/cu124
+#   CUDA 11.8 driver:
+#     pip install torch==2.4.* torchvision --index-url https://download.pytorch.org/whl/cu118
+#   CPU-only (Mac / no GPU):
+#     pip install torch torchvision
+#
+# Sanity check:
+#   python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+# ----------------------------------------------------------------------
+
+# Trainer + config
+pytorch-lightning>=2.1,<3.0
+hydra-core>=1.3
+omegaconf>=2.3
+
+# Medical imaging IO
+nibabel>=5.0
+pydicom>=2.4
+
+# Numerics / utils
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+
+# Logging (optional — set use_wandb=false to skip at runtime)
+wandb>=0.16

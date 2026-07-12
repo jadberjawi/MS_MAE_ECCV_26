@@ -1,0 +1,21 @@
+# Supervised finetune with randomly-initialized encoder.
+name: from_scratch
+_target_: src.strategies.supervised.strategy.SupervisedSegStrategy
+
+pretrained_ckpt: null         # explicit null = no transfer
+freeze_encoder_epochs: 0      # always trainable
+encoder_lr_mult: 1.0          # same LR as decoder/head
+
+# Decoder for segmentation: full 3D U-Net decoder with skips from the encoder.
+decoder:
+  _target_: src.models.backbones.unet3d.UNet3DDecoder
+  out_channels: 2             # background + LV
+  norm: "instance"
+  activation: "leaky_relu"
+  dropout: 0.0
+
+# Loss: Dice + CE works well for binary LV.
+loss:
+  dice_weight: 1.0
+  ce_weight: 1.0
+  include_background: false   # background dominates voxels; ignore it in Dice

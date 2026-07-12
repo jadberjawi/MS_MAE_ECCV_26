@@ -1,0 +1,17 @@
+# Weights & Biases settings. NOTE: no `_target_:` — wandb.init is called
+# explicitly from scripts/{pretrain,finetune}.py via src/utils/wandb_init.py.
+# This makes the init line visible in the script (no hidden Hydra magic).
+#
+# Auth: set WANDB_API_KEY in your shell (e.g. .bashrc on the HPC, or the .sh
+# file you sbatch). We never call `wandb login` interactively.
+#
+# Quick toggle: `use_wandb: true|false` at the top of the run config.
+project: "spect-mpi-ssl-v3"
+entity: null                 # set if your team has a W&B entity, else null = personal
+name: ${run_name}
+save_dir: ${paths.output_dir}
+group: ${task}
+tags: ["${task}", "${backbone.name}"]
+notes: ""
+mode: "online"               # online | offline | disabled
+log_model: false             # set true to upload checkpoints as W&B artifacts

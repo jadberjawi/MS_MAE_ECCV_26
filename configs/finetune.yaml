@@ -1,0 +1,88 @@
+# Root config for supervised LV segmentation (5-fold CV).
+# Override init with: python scripts/finetune.py finetune=from_pretrained finetune.pretrained_ckpt=outputs/pretrain/.../last.ckpt
+defaults:
+  - data: seg
+  - backbone: unet3d
+  - finetune: from_scratch    # from_scratch | from_pretrained
+  - optim: adamw
+  - trainer: finetune
+  - logger: wandb
+  - _self_
+
+seed: 1337
+task: finetune
+
+# `ssl_tag` is a free-text label that controls TWO things at once:
+#   1. The output dir / run_name  -> from_${ssl_tag}_<backbone>_seed_..._fold...
+#   2. The W&B project name       -> ms-mae-finetune-${ssl_tag}
+# Pass it explicitly on the CLI to distinguish runs, e.g.:
+#       ssl_tag=scratch     (from-scratch baseline; the default)
+#       ssl_tag=ms_mae      (initialised from an MS-MAE pretrained encoder)
+ssl_tag: scratch
+
+# `tf` = train_fraction; `fold` = fold index. Output dirs are unique per
+# (ssl_tag, seed, train_fraction, fold) so sweeps don't collide.
+run_name: from_${ssl_tag}_${backbone.name}_seed${seed}_tf${split.train_fraction}_fold${split.fold}
+
+# Each ssl_tag gets its own W&B project so the dashboard stays clean.
+# Override on CLI:  logger.project=spect-mpi-finetune-mae  (or just rely on the
+# default below — it picks up ssl_tag automatically).
+logger:
+  project: "ms-mae-finetune-${ssl_tag}"
+
+# Single toggle for W&B. Set use_wandb=false (or logger.mode=disabled) to skip.
+# When true, scripts/finetune.py explicitly calls wandb.init(...) per fold.
+use_wandb: true
+
+# Strict split policy:
+#   1. First hold out `test_fraction` of all labeled samples as the TEST set.
+#      This set is touched only at the very end (trainer.test on the best
+#      per-fold checkpoint). It never participates in training or model selection.
+#   2. The remaining (1 - test_fraction) pool is K-folded. For each fold,
+#      `val` comes from INSIDE the train+val pool and is used for early stopping
+#      and best-checkpoint selection. `train` is the rest of the pool.
+#
+# train fraction (effective per fold) ≈ (1 - test_fraction) * (1 - 1/n_folds)
+# val   fraction (effective per fold) ≈ (1 - test_fraction) * (1/n_folds)
+# test  fraction (held out, same set across all folds) = test_fraction
+#
+# Example: test_fraction=0.2, n_folds=5 →
+#   test 20%, then 80% pool → per fold: train 64% / val 16% (of total).
+split:
+  test_fraction: 0.2
+  n_folds: 5
+  fold: -1                     # -1 = run all folds; otherwise run a single fold index
+  # `split.seed` controls the test holdout + KFold partition. KEEP IT FIXED
+  # across multi-seed experiments so the test set never changes — that's
+  # what makes paired statistical tests (Wilcoxon etc.) valid. The top-level
+  # `seed` independently controls weight init, augmentation RNG, etc.
+  seed: 1337
+
+  # Label-efficiency knob. Only shrinks the per-fold TRAIN set; val and test
+  # remain full so the comparison across train_fraction values is fair.
+  # Examples:
+  #   train_fraction=1.0   → use the full train pool (default)
+  #   train_fraction=0.5   → use half of each fold's train pool
+  #   train_fraction=0.1   → use 10% of each fold's train pool
+  # Sweep across fractions (Hydra multirun):
+  #   python scripts/finetune.py -m split.train_fraction=0.1,0.2,0.5,1.0
+  train_fraction: 1.0
+
+paths:
+  project_root: ${hydra:runtime.cwd}
+  cache_dir: ${paths.project_root}/cache
+  output_dir: ${paths.project_root}/outputs/finetune/${run_name}
+  ckpt_dir: ${paths.output_dir}/checkpoints
+
+hydra:
+  run:
+    dir: ${paths.output_dir}
+  sweep:
+    # IMPORTANT: this path is read by the sweeper BEFORE HydraConfig is set,
+    # so it CANNOT use ${paths.*} or ${hydra:runtime.cwd}. We use a relative
+    # path here (Hydra resolves it against the cwd at sweep time) plus a
+    # timestamp so concurrent multirun jobs don't collide.
+    # Per-fold checkpoints + cv_summary.json still land in paths.output_dir
+    # (one dir per (seed, train_fraction) combo), which the aggregator reads.
+    dir: outputs/sweeps/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}

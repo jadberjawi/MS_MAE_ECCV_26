@@ -1,0 +1,24 @@
+# Supervised finetune initialised from an SSL-pretrained encoder.
+name: from_pretrained
+_target_: src.strategies.supervised.strategy.SupervisedSegStrategy
+
+# Path to a Lightning checkpoint from pretraining (output of scripts/pretrain.py).
+# Override on CLI, e.g.:
+#   python scripts/finetune.py finetune=from_pretrained \
+#     finetune.pretrained_ckpt=outputs/pretrain/mae_unet3d_seed1337/checkpoints/last.ckpt
+pretrained_ckpt: ???          # Hydra will require this be set
+
+freeze_encoder_epochs: 0      # set >0 to keep encoder frozen for N epochs (linear-probe style warmup)
+encoder_lr_mult: 0.1          # smaller LR on transferred encoder is standard practice
+
+decoder:
+  _target_: src.models.backbones.unet3d.UNet3DDecoder
+  out_channels: 2
+  norm: "instance"
+  activation: "leaky_relu"
+  dropout: 0.0
+
+loss:
+  dice_weight: 1.0
+  ce_weight: 1.0
+  include_background: false
