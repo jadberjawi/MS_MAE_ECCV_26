@@ -223,13 +223,3 @@ finetuning, so weight transfer between the two stages is exact and key-compatibl
 - Weights & Biases logging is optional: set `use_wandb=false` to run fully
   offline. When enabled, set `WANDB_API_KEY` in your environment first.
 
-## Citation
-
-```bibtex
-@inproceedings{msmae_eccv,
-  title     = {Multi-Scale Masked Autoencoder Pretraining for SPECT-MPI Left-Ventricle Segmentation},
-  author    = {<authors>},
-  booktitle = {ECCV},
-  year      = {2026}
-}
-```
