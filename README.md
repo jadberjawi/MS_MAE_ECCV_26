@@ -8,9 +8,6 @@ patch reconstruction) and **global structure** (coarse, whole-volume
 reconstruction). The pretrained encoder is then transferred to a supervised
 left-ventricle (LV) segmentation task.
 
-This repository is intentionally minimal — it contains exactly the three pieces
-needed to reproduce the method:
-
 1. **Data preparation** — `scripts/prepare_data.py`
 2. **MS-MAE pretraining** (our contribution) — `scripts/pretrain.py`
 3. **Supervised finetuning** — `scripts/finetune.py`
@@ -130,17 +127,12 @@ The best/last checkpoints are written to:
 outputs/pretrain/ms_mae_unet3d_seed1337/checkpoints/last.ckpt
 ```
 
-An **EMA** (exponential moving average) copy of the encoder is maintained during
-training and stored inside every checkpoint under `ema_encoder_state_dict`; the
-finetuning loader prefers it automatically (typically +1–3% Dice for free).
-Disable with `ema.enable=false`.
-
 Key knobs — [`configs/pretrain/ms_mae.yaml`](configs/pretrain/ms_mae.yaml):
 
 | Parameter | Default | Meaning |
 |---|---|---|
 | `mask_ratio` | `0.6` | fraction of patch-cubes masked |
-| `patch_size` | `[8,8,8]` | masking granularity (voxels) |
+| `patch_size` | `[4,4,4]` | masking granularity (voxels) |
 | `coarse_shape` | `[16,16,16]` | resolution of the coarse reconstruction target |
 | `loss.lambda_fine` | `1.0` | weight of the fine (masked) stream |
 | `loss.lambda_coarse` | `0.5` | weight of the coarse (global) stream |
