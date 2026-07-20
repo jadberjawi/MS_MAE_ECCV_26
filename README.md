@@ -27,7 +27,7 @@ features:
   volume, forcing the bottleneck to encode global anatomy.
 
 ```
-loss = λ_fine · L_fine(masked)  +  λ_coarse · L_coarse(global)
+loss = λ_1 · L_fine(masked)  +  λ_2 · L_coarse(global)
 ```
 
 Because both decoders consume the *same* encoding of the *masked* input, the
