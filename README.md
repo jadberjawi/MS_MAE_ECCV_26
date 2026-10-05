@@ -223,3 +223,18 @@ finetuning, so weight transfer between the two stages is exact and key-compatibl
 - Weights & Biases logging is optional: set `use_wandb=false` to run fully
   offline. When enabled, set `WANDB_API_KEY` in your environment first.
 
+## Cite Us
+
+If you use this work, please cite our paper:
+
+```bibtex
+@inproceedings{
+berjawi2026constraintaware,
+title={Constraint-Aware Self-Supervised Pretraining for Label-Efficient Left Ventricle Segmentation in {SPECT} {MPI}},
+author={Jad Berjawi and Christophe C{\'e}rin and Laurent Riou},
+booktitle={Artificial Intelligence for Medical 3D Vision Workshop},
+year={2026},
+url={https://openreview.net/forum?id=VUjYcAImO9}
+}
+```
+
